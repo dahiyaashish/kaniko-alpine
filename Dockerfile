@@ -14,8 +14,16 @@
 
 # Builds the static Go image to execute in a Kubernetes job
 
-FROM gcr.io/kaniko-project/executor:latest
+FROM gcr.io/kaniko-project/executor:latest kaniko
 
 FROM alpine
-COPY --from=0 /kaniko/executor /usr/local/bin/executor
-ENTRYPOINT ["executor"]
+ENV HOME /root
+ENV USER root
+ENV SSL_CERT_DIR=/kaniko/ssl/certs
+ENV DOCKER_CONFIG /kaniko/.docker/
+ENV DOCKER_CREDENTIAL_GCR_CONFIG /kaniko/.config/gcloud/docker_credential_gcr_config.json
+ENV PATH /kaniko:/busybox:$PATH
+RUN mkdir -p /kaniko
+COPY --from=kaniko /kaniko/* /kaniko/
+COPY --from=kaniko /etc/nsswitch.conf /etc/nsswitch.conf
+ENTRYPOINT ["/kaniko/executor"]
